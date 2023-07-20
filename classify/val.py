@@ -18,6 +18,17 @@ Usage - formats:
                                        yolov5s-cls.tflite             # TensorFlow Lite
                                        yolov5s-cls_edgetpu.tflite     # TensorFlow Edge TPU
                                        yolov5s-cls_paddle_model       # PaddlePaddle
+
+---
+
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Website:      https://maxsitt.github.io/insect-detect-docs/
+License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+
+Modifications:
+- add additional option (argparse argument):
+  '--task' choose between '--task val' (default) to validate on the dataset val split
+           and '--task test' to validate on the dataset test split
 """
 
 import argparse
@@ -59,6 +70,7 @@ def run(
     dataloader=None,
     criterion=None,
     pbar=None,
+    task='val',  # val or test dataset split for validation
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -88,7 +100,11 @@ def run(
 
         # Dataloader
         data = Path(data)
-        test_dir = data / 'test' if (data / 'test').exists() else data / 'val'  # data/test or data/val
+        task = task if task in ('val', 'test') else 'val'
+        if task == 'val':
+          test_dir = data / 'val' if (data / 'val').exists() else data / 'test'  # data/val or data/test
+        if task == 'test':
+          test_dir = data / 'test' if (data / 'test').exists() else data / 'val'  # data/test or data/val
         dataloader = create_classification_dataloader(path=test_dir,
                                                       imgsz=imgsz,
                                                       batch_size=batch_size,
@@ -155,6 +171,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--task', default='val', help='val or test dataset split for validation')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
