@@ -1,6 +1,17 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Image augmentation functions
+
+---
+
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Website:      https://maxsitt.github.io/insect-detect-docs/
+License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+
+Modifications:
+- add class Resize to classify_transforms() for resizing the images during preprocessing
+  without preserving aspect ratio and make it the default method (no visual information
+  is lost compared to CenterCrop; no potential bias is introduced compared to LetterBox)
 """
 
 import math
@@ -348,7 +359,17 @@ def classify_transforms(size=224):
     # Transforms to apply if albumentations not installed
     assert isinstance(size, int), f'ERROR: classify_transforms size {size} must be integer, not (list, tuple)'
     # T.Compose([T.ToTensor(), T.Resize(size), T.CenterCrop(size), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
-    return T.Compose([CenterCrop(size), ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+    return T.Compose([Resize(size), ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+
+
+class Resize:
+    # Use only cv2.resize() for image preprocessing (aspect ratio is not preserved)
+    def __init__(self, size=640):
+        super().__init__()
+        self.h, self.w = (size, size) if isinstance(size, int) else size
+
+    def __call__(self, im):  # im = np.array HWC
+        return cv2.resize(im, (self.w, self.h), interpolation=cv2.INTER_LINEAR)
 
 
 class LetterBox:
