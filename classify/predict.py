@@ -26,14 +26,36 @@ Usage - formats:
                                            yolov5s-cls.tflite             # TensorFlow Lite
                                            yolov5s-cls_edgetpu.tflite     # TensorFlow Edge TPU
                                            yolov5s-cls_paddle_model       # PaddlePaddle
+
+---
+
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Website:      https://maxsitt.github.io/insect-detect-docs/
+License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+
+Modifications:
+- add additional options (argparse arguments):
+  '--concat-csv' concatenate metadata .csv files and append classification results to new columns
+  '--new-csv' create new .csv file with classification results
+  '--sort-top1' sort images to folders with predicted top1 class as folder name
+- sort predicted images to folders with predicted top1 class as folder name
+  and do not write results on to image as text (if sort_top1)
+- write only top1 label + top1 prob to image in top left corner (if not sort-top1)
+- write classification results (top1, top2, top3 class + probability and image filename) to lists
+- concatenate all metadata .csv files in the 'data' folder and add new columns with classification
+  results from lists, save as '{timestamp}_{name}_metadata_classified.csv' (if concat_csv)
+- create new .csv file with timestamp and tracking ID extracted from image filename and
+  classification results from lists, save as '{timestamp}_{name}_data_classified.csv' (if new_csv)
 """
 
 import argparse
 import os
 import platform
 import sys
+from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import torch
 import torch.nn.functional as F
 
@@ -71,6 +93,9 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
+        concat_csv=False, # append classification results to concatenated metadata .csv files
+        new_csv=False, # create new .csv file with classification results
+        sort_top1=False # sort images to folders with predicted top1 class as folder name
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -103,6 +128,17 @@ def run(
         dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
     vid_path, vid_writer = [None] * bs, [None] * bs
 
+    # Create empty lists for top1,top2,top3 class + probability and image filename
+    if concat_csv or new_csv or sort_top1:
+        lst_top1 = []
+        lst_top2 = []
+        lst_top3 = []
+        lst_top1_prob = []
+        lst_top2_prob = []
+        lst_top3_prob = []
+    if new_csv:
+        lst_img = []
+
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
@@ -131,7 +167,10 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
+            if sort_top1:
+                save_path = str(save_dir)
+            else:
+                save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
 
             s += '%gx%g ' % im.shape[2:]  # print string
@@ -142,12 +181,25 @@ def run(
             s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
 
             # Write results
-            text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
-            if save_img or view_img:  # Add bbox to image
-                annotator.text((32, 32), text, txt_color=(255, 255, 255))
+            if not sort_top1:
+                if save_img or view_img:  # Add bbox to image
+                    text = f'{names[top5i[0]]}\n{prob[top5i[0]]:.2f}'
+                    annotator.text((2, 2), text, txt_color=(255, 255, 255))
             if save_txt:  # Write to file
+                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
                 with open(f'{txt_path}.txt', 'a') as f:
                     f.write(text + '\n')
+
+            # Append results to lists
+            if concat_csv or new_csv or sort_top1:
+                lst_top1.append(f"{names[top5i[0]]}")
+                lst_top2.append(f"{names[top5i[1]]}")
+                lst_top3.append(f"{names[top5i[2]]}")
+                lst_top1_prob.append(f"{prob[top5i[0]]:.2f}")
+                lst_top2_prob.append(f"{prob[top5i[1]]:.2f}")
+                lst_top3_prob.append(f"{prob[top5i[2]]:.2f}")
+            if new_csv:
+                lst_img.append(f"{p.name}")
 
             # Stream results
             im0 = annotator.result()
@@ -162,7 +214,11 @@ def run(
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
+                    if sort_top1:
+                        Path(f"{save_path}/top1_classes/{lst_top1[-1]}").mkdir(parents=True, exist_ok=True)
+                        cv2.imwrite(f"{save_path}/top1_classes/{lst_top1[-1]}/{p.name}", im0)
+                    else:
+                        cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
@@ -190,6 +246,35 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+    # Concatenate all metadata .csv files and add new columns with classification results
+    timestamp = datetime.now().strftime("%Y%m%d_%H-%M")
+    if concat_csv:
+        meta_csv_files = Path(source).parent.glob('**/metadata*.csv')
+        df_concat = pd.concat((pd.read_csv(f) for f in meta_csv_files), ignore_index=True)
+        df_concat["top1"] = lst_top1
+        df_concat["top1_prob"] = lst_top1_prob
+        df_concat["top2"] = lst_top2
+        df_concat["top2_prob"] = lst_top2_prob
+        df_concat["top3"] = lst_top3
+        df_concat["top3_prob"] = lst_top3_prob
+        df_concat.to_csv(f"{timestamp}_{name}_metadata_classified.csv", index=False)
+
+    # Write classification results to new .csv file
+    if new_csv:
+        df_new = pd.DataFrame(
+            columns = ["img_name", "timestamp", "track_ID", "top1", "top1_prob",
+                       "top2", "top2_prob", "top3", "top3_prob"])
+        df_new["img_name"] = lst_img
+        df_new["timestamp"] = df_new["img_name"].str[:24]
+        df_new["track_ID"] = df_new["img_name"].str[25:26]
+        df_new["top1"] = lst_top1
+        df_new["top1_prob"] = lst_top1_prob
+        df_new["top2"] = lst_top2
+        df_new["top2_prob"] = lst_top2_prob
+        df_new["top3"] = lst_top3
+        df_new["top3_prob"] = lst_top3_prob
+        df_new.to_csv(f"{timestamp}_{name}_data_classified.csv", index=False)
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
@@ -210,6 +295,9 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
+    parser.add_argument('--concat-csv', action='store_true', help='concatenate metadata .csv files and append classification results')
+    parser.add_argument('--new-csv', action='store_true', help='create new .csv file with classification results')
+    parser.add_argument('--sort-top1', action='store_true', help='sort images to folders with predicted top1 class as folder name')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
