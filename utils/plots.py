@@ -1,6 +1,15 @@
 # YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
 """
 Plotting utils
+
+---
+
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Website:      https://maxsitt.github.io/insect-detect-docs/
+License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+
+Modifications:
+- increase maximum number of images to plot from 25 to 64 for imshow_cls()
 """
 
 import contextlib
@@ -430,7 +439,7 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     plt.close()
 
 
-def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Path('images.jpg')):
+def imshow_cls(im, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
     from utils.augmentations import denormalize
 
