@@ -11,6 +11,18 @@ Usage - Multi-GPU DDP training:
 Datasets:           --data mnist, fashion-mnist, cifar10, cifar100, imagenette, imagewoof, imagenet, or 'path/to/data'
 YOLOv5-cls models:  --model yolov5n-cls.pt, yolov5s-cls.pt, yolov5m-cls.pt, yolov5l-cls.pt, yolov5x-cls.pt
 Torchvision models: --model resnet50, efficientnet_b0, etc. See https://pytorch.org/vision/stable/models.html
+
+---
+
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Website:      https://maxsitt.github.io/insect-detect-docs/
+License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+
+Modifications:
+- use data_dir / 'val' as test_dir to get the images for validation by default (instead of data_dir / 'test')
+- save 64 instead of 25 example train images to 'train_images.jpg'
+- save 64 instead of 25 example test images to 'test_images.jpg'
+
 """
 
 import argparse
@@ -95,7 +107,7 @@ def train(opt, device):
                                                    rank=LOCAL_RANK,
                                                    workers=nw)
 
-    test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
+    test_dir = data_dir / 'val' if (data_dir / 'val').exists() else data_dir / 'test'  # data/val or data/test
     if RANK in {-1, 0}:
         testloader = create_classification_dataloader(path=test_dir,
                                                       imgsz=imgsz,
@@ -135,7 +147,7 @@ def train(opt, device):
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        file = imshow_cls(images[:25], labels[:25], names=model.names, f=save_dir / 'train_images.jpg')
+        file = imshow_cls(images[:64], labels[:64], names=model.names, f=save_dir / 'train_images.jpg')
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
@@ -258,7 +270,7 @@ def train(opt, device):
                     f'\nVisualize:       https://netron.app\n')
 
         # Plot examples
-        images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
+        images, labels = (x[:64] for x in next(iter(testloader)))  # first 64 images and labels
         pred = torch.max(ema.ema(images.to(device)), 1)[1]
         file = imshow_cls(images, labels, pred, de_parallel(model).names, verbose=False, f=save_dir / 'test_images.jpg')
 
