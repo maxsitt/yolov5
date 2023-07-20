@@ -13,10 +13,11 @@ The current modifications include:
 - [classification training](https://github.com/maxsitt/yolov5/blob/master/classify/train.py)
 - [augmentations](https://github.com/maxsitt/yolov5/blob/master/utils/augmentations.py) for classification training
 - [plotting](https://github.com/maxsitt/yolov5/blob/master/utils/plots.py) for classification training
+- [classification validation](https://github.com/maxsitt/yolov5/blob/master/classify/val.py)
 - [classification prediction](https://github.com/maxsitt/yolov5/blob/master/classify/predict.py)
 
 More information about custom model training can be found at the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml)
-GitHub repo and in the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_detection/) 📑.
+GitHub repo and in the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_classification/) 📑.
 
 **YOLOv5 classification model training** &nbsp;
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maxsitt/insect-detect-ml/blob/main/notebooks/YOLOv5_classification_training.ipynb)
