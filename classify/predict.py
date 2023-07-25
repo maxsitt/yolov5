@@ -266,7 +266,7 @@ def run(
                        "top2", "top2_prob", "top3", "top3_prob"])
         df_new["img_name"] = lst_img
         df_new["timestamp"] = df_new["img_name"].str[:24]
-        df_new["track_ID"] = df_new["img_name"].str[25:26]
+        df_new["track_ID"] = df_new["img_name"].str[10:].str.extract("_(.*)_crop")
         df_new["top1"] = lst_top1
         df_new["top1_prob"] = lst_top1_prob
         df_new["top2"] = lst_top2
