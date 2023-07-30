@@ -27,16 +27,22 @@ License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
 
 Modifications:
 - add additional option (argparse argument):
-  '--task' choose between '--task val' (default) to validate on the dataset val split
+  '--task' use '--task val' (default) to validate on the dataset validation split
            and '--task test' to validate on the dataset test split
+- save validation results to '{save_dir}/validation_results_{task}.csv'
+- plot validation results as confusion matrix and save to '{save_dir}/confusion_matrix_{task}.png'
 """
 
 import argparse
+import csv
 import os
 import sys
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -153,6 +159,46 @@ def run(
         shape = (1, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
+
+    if not training:
+        # Save results to .csv
+        with open(f'{save_dir}/validation_results_{task}.csv', 'w', encoding='utf-8') as val_result_file:
+            val_result = csv.DictWriter(val_result_file, fieldnames=['class', 'images', 'top1_acc', 'top5_acc'])
+            val_result.writeheader()
+            val_result.writerow({'class': 'all', 'images': targets.shape[0],
+                                 'top1_acc': round(top1, 3), 'top5_acc': round(top5, 3)})
+            for i, c in model.names.items():
+                acc_i = acc[targets == i]
+                top1i, top5i = acc_i.mean(0).tolist()
+                val_result.writerow({'class': c, 'images': acc_i.shape[0],
+                                     'top1_acc': round(top1i, 3), 'top5_acc': round(top5i, 3)})
+
+        # Plot and save results as confusion matrix
+        lst_targets = targets.tolist() # true labels
+        lst_pred_top1 = [label[0] for label in pred.tolist()] # predicted top1 labels
+        labels = list(dict(model.names.items()).values()) # label/class names
+        number_classes = len(labels)
+        if number_classes >= 25:
+            font_size, font_size_values = 8, 3
+        elif 20 <= number_classes < 25:
+            font_size, font_size_values = 10, 4
+        elif 15 <= number_classes < 20:
+            font_size, font_size_values = 10, 6
+        elif 10 <= number_classes < 15:
+            font_size, font_size_values = 10, 8
+        elif 5 <= number_classes < 10:
+            font_size, font_size_values = 12, 10
+        else:
+            font_size, font_size_values = 12, 12
+        cf_matrix = np.around(confusion_matrix(lst_targets, lst_pred_top1, normalize='true'), 3)
+        cf_matrix_plot = ConfusionMatrixDisplay(confusion_matrix=cf_matrix, display_labels=labels)
+        plt.rcParams.update({'font.size': font_size})
+        cf_matrix_plot.plot(cmap='Blues', xticks_rotation='vertical', values_format='.2g')
+        for values in cf_matrix_plot.text_.ravel():
+            values.set_fontsize(font_size_values)
+        cf_matrix_plot.ax_.set_title('Normalized confusion matrix')
+        plt.savefig(f'{save_dir}/confusion_matrix_{task}.png', dpi=600, bbox_inches='tight')
+        plt.close()
 
     return top1, top5, loss
 
