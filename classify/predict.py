@@ -65,12 +65,13 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from ultralytics.utils.plotting import Annotator
+
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, print_args, strip_optimizer)
-from utils.plots import Annotator
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -184,7 +185,7 @@ def run(
             if not sort_top1:
                 if save_img or view_img:  # Add bbox to image
                     text = f'{names[top5i[0]]}\n{prob[top5i[0]]:.2f}'
-                    annotator.text((2, 2), text, txt_color=(255, 255, 255))
+                    annotator.text([2, 2], text, txt_color=(255, 255, 255))
             if save_txt:  # Write to file
                 text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
                 with open(f'{txt_path}.txt', 'a') as f:
