@@ -4,27 +4,30 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
 
-This fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository includes several modifications
-to the original scripts that make it work more smoothly with the captured insect images from the
-[Insect Detect](https://maxsitt.github.io/insect-detect-docs/) DIY camera trap.
+This fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository includes
+several modifications to the original scripts to improve classification model training,
+validation and prediction. The modifications are specifically adapted to data captured
+with the [Insect Detect](https://maxsitt.github.io/insect-detect-docs/) DIY camera trap.
 
-The current modifications include:
+The current [modifications](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master) include:
 
-- [classification training](https://github.com/maxsitt/yolov5/blob/master/classify/train.py)
-- [augmentations](https://github.com/maxsitt/yolov5/blob/master/utils/augmentations.py) for classification training
-- [plotting](https://github.com/maxsitt/yolov5/blob/master/utils/plots.py) for classification training
-- [classification validation](https://github.com/maxsitt/yolov5/blob/master/classify/val.py)
-- [classification prediction](https://github.com/maxsitt/yolov5/blob/master/classify/predict.py)
-- [required packages](https://github.com/maxsitt/yolov5/blob/master/requirements.txt)
+- [`classify/train.py`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-aa2cb7fe4577a35394fa176b620261b55d31c28cd55f2babb8f63be9b812d709)
+- [`classify/val.py`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-da679eb81c2b6194517c235b142146c9d3d1d633dce0b2e2b93fdc13e805e36e)
+- [`classify/predict.py`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-b59588df76eca837ad0c0dcee1e81768a4c23e883b01a10f48261f605b8945ab)
+- [`utils/augmentations.py`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-d6b476d86d9ee6fa801af612c19eb8b335b9dfdd5d7abab96e8ebe9aa3b923ed)
+- [`utils/plots.py`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-2959ec2264b4b3689a7091e802c5e1ebd8ca6b44c818d6a2a8c01fe91a82810a)
+- [`requirements.txt`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-4d7c51b1efe9043e44439a949dfd92e5827321b34082903477fd04876edb7552)
+- [`README.md`](https://github.com/ultralytics/yolov5/compare/master...maxsitt:yolov5:master#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5)
 
 More information about custom model training can be found at the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml)
 GitHub repo and in the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_classification/) 📑.
 
+Use the Google Colab notebook to train a YOLOv5-cls image classification model on your own custom dataset!
+
 **YOLOv5 classification model training** &nbsp;
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maxsitt/insect-detect-ml/blob/main/notebooks/YOLOv5_classification_training.ipynb)
 
-> Includes [export](https://github.com/ultralytics/yolov5/issues/251)
-  to [ONNX](https://onnx.ai/) format for faster CPU inference.
+> Includes [export](https://github.com/ultralytics/yolov5/issues/251) to [ONNX](https://onnx.ai/) format for faster CPU inference.
 
 ---
 
