@@ -165,13 +165,21 @@ def run(
         with open(f'{save_dir}/validation_results_{task}.csv', 'w', encoding='utf-8') as val_result_file:
             val_result = csv.DictWriter(val_result_file, fieldnames=['class', 'images', 'top1_acc', 'top5_acc'])
             val_result.writeheader()
-            val_result.writerow({'class': 'all', 'images': targets.shape[0],
-                                 'top1_acc': round(top1, 3), 'top5_acc': round(top5, 3)})
+            val_result.writerow(
+                {'class': 'all',
+                 'images': targets.shape[0],
+                 'top1_acc': round(top1, 3),
+                 'top5_acc': round(top5, 3)
+                })
             for i, c in model.names.items():
                 acc_i = acc[targets == i]
                 top1i, top5i = acc_i.mean(0).tolist()
-                val_result.writerow({'class': c, 'images': acc_i.shape[0],
-                                     'top1_acc': round(top1i, 3), 'top5_acc': round(top5i, 3)})
+                val_result.writerow(
+                    {'class': c,
+                     'images': acc_i.shape[0],
+                     'top1_acc': round(top1i, 3),
+                     'top5_acc': round(top5i, 3)
+                    })
 
         # Plot and save results as confusion matrix
         lst_targets = targets.tolist() # true labels
