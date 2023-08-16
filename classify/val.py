@@ -29,20 +29,21 @@ Modifications:
 - add additional option (argparse argument):
   '--task' use '--task val' (default) to validate on the dataset validation split
            and '--task test' to validate on the dataset test split
-- save validation results to '{save_dir}/validation_results_{task}.csv'
+- save validation results to '{save_dir}/valid_results_{task}.csv' (top1 + top5 accuracy)
+- save validation metrics to '{save_dir}/valid_metrics_{task}.csv' (precision, recall, f1-score)
 - plot validation results as confusion matrix and save to '{save_dir}/confusion_matrix_{task}.png'
 """
 
 import argparse
-import csv
 import os
 import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -161,31 +162,47 @@ def run(
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     if not training:
-        # Save results to .csv
-        with open(f'{save_dir}/validation_results_{task}.csv', 'w', encoding='utf-8') as val_result_file:
-            val_result = csv.DictWriter(val_result_file, fieldnames=['class', 'images', 'top1_acc', 'top5_acc'])
-            val_result.writeheader()
-            val_result.writerow(
-                {'class': 'all',
-                 'images': targets.shape[0],
-                 'top1_acc': round(top1, 3),
-                 'top5_acc': round(top5, 3)
-                })
-            for i, c in model.names.items():
-                acc_i = acc[targets == i]
-                top1i, top5i = acc_i.mean(0).tolist()
-                val_result.writerow(
-                    {'class': c,
-                     'images': acc_i.shape[0],
-                     'top1_acc': round(top1i, 3),
-                     'top5_acc': round(top5i, 3)
-                    })
+        # Write number of images and top1 + top5 acc per class to list
+        lst_images = [targets.shape[0]]
+        lst_top1_acc = [round(top1, 3)]
+        lst_top5_acc = [round(top5, 3)]
+        for i, c in model.names.items():
+            acc_i = acc[targets == i]
+            top1i, top5i = acc_i.mean(0).tolist()
+            lst_images.append(acc_i.shape[0])
+            lst_top1_acc.append(round(top1i, 3))
+            lst_top5_acc.append(round(top5i, 3))
 
-        # Plot and save results as confusion matrix
-        lst_targets = targets.tolist() # true labels
-        lst_pred_top1 = [label[0] for label in pred.tolist()] # predicted top1 labels
-        labels = list(dict(model.names.items()).values()) # label/class names
-        number_classes = len(labels)
+        # Write results to .csv
+        class_names = list(dict(model.names.items()).values())
+        df_results = pd.DataFrame(
+            {'class': ['all'] + class_names,
+             'images': lst_images,
+             'top1_acc': lst_top1_acc,
+             'top5_acc': lst_top5_acc
+            })
+        df_results.to_csv(f'{save_dir}/valid_results_{task}.csv', index=False)
+
+        # Write true classes and predicted classes to list
+        classes_true = targets.tolist()
+        classes_pred = [label[0] for label in pred.tolist()]
+
+        # Write metrics to .csv
+        report = classification_report(classes_true, classes_pred, target_names=class_names, output_dict=True)
+        df_metrics = (pd.DataFrame(report).transpose()
+                                          .drop(['accuracy'])
+                                          .rename({'macro avg': 'all', 'weighted avg': 'all_weighted'})
+                                          .rename(columns={'support': 'images'})
+                                          .astype({'images': int})
+                                          .round(3))
+        df_metrics_all = df_metrics.loc[['all', 'all_weighted']]
+        df_metrics = (pd.concat([df_metrics_all, df_metrics.drop(['all', 'all_weighted'])])
+                        .reset_index(names='class'))
+        df_metrics = df_metrics[['class', 'images', 'precision', 'recall', 'f1-score']]
+        df_metrics.to_csv(f'{save_dir}/valid_metrics_{task}.csv', index=False)
+
+        # Plot results as confusion matrix
+        number_classes = len(class_names)
         if number_classes >= 25:
             font_size, font_size_values = 8, 3
         elif 20 <= number_classes < 25:
@@ -198,8 +215,8 @@ def run(
             font_size, font_size_values = 12, 10
         else:
             font_size, font_size_values = 12, 12
-        cf_matrix = np.around(confusion_matrix(lst_targets, lst_pred_top1, normalize='true'), 3)
-        cf_matrix_plot = ConfusionMatrixDisplay(confusion_matrix=cf_matrix, display_labels=labels)
+        cf_matrix = np.around(confusion_matrix(classes_true, classes_pred, normalize='true'), 3)
+        cf_matrix_plot = ConfusionMatrixDisplay(cf_matrix, display_labels=class_names)
         plt.rcParams.update({'font.size': font_size})
         cf_matrix_plot.plot(cmap='Blues', xticks_rotation='vertical', values_format='.2g')
         for values in cf_matrix_plot.text_.ravel():
