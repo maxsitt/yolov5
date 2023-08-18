@@ -324,8 +324,8 @@ def run(
 
     # Concatenate all metadata .csv files and add new columns with classification results
     if concat_csv:
-        meta_csv_files = Path(source).parent.glob('**/metadata*.csv')
-        if len(list(meta_csv_files)) > 0:
+        meta_csv_files = list(Path(source).parent.glob('**/metadata*.csv'))
+        if len(meta_csv_files) > 0:
             df_concat = pd.concat((pd.read_csv(f) for f in meta_csv_files), ignore_index=True)
             df_concat = pd.concat([df_concat, df_results.drop(columns=['img_name'])], axis=1)
             df_concat.to_csv(f'{save_dir}/results/{name}_metadata_classified.csv', index=False)
