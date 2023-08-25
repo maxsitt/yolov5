@@ -36,13 +36,16 @@ License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
 Modifications:
 - add additional options (argparse arguments):
   '--sort-top1' sort images to folders with predicted top1 class as folder name
+  '--sort-prob' sort images first by probability and then by top1 class (requires --sort-top1)
   '--concat-csv' concatenate metadata .csv files and append classification results
   '--new-csv' create new .csv file with classification results
-- sort predicted images to folders with predicted top1 class as folder name
-  and do not write results on to image as text (if sort-top1)
-- write only top1 label + top1 prob to image in top left corner (if not sort-top1)
+- write only top1 class + prob on to image in top left corner (if not sort-top1)
 - save classification results to lists (image filename and top1, top2, top3 class + probability)
-- print script run time and estimated inference time per image
+- sort images to folders with predicted top1 class as folder name
+  and do not write top1 class + prob on to image as text (if sort-top1)
+- sort images first by top1 probability (0-0.5, 0.5-0.8, 0.8-1) and then by top1 class
+  and do not write top1 class + prob on to image as text (if sort-top1 + sort-prob)
+- print estimated inference time per image
 - write classification results to 'results/pred_results.csv'
 - write mean classification probability per top 1 class to '/results/top1_prob_mean.csv'
 - save boxplot with the classification probability per top 1 class as 'results/top1_prob.png'
@@ -51,6 +54,7 @@ Modifications:
   classification results, save to 'results/{name}_metadata_classified.csv' (if concat-csv)
 - create new .csv file with classification results and timestamp + tracking ID
   extracted from image filename, save to 'results/{name}_data_classified.csv' (if new-csv)
+- print script run time
 """
 
 import argparse
@@ -103,7 +107,8 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
         sort_top1=False, # sort images to folders with predicted top1 class as folder name
-        concat_csv=False, # append classification results to concatenated metadata .csv files
+        sort_prob=False, # sort images first by probability and then by top1 class
+        concat_csv=False, # concatenate metadata .csv files and append classification results
         new_csv=False # create new .csv file with classification results
 ):
     source = str(source)
@@ -200,7 +205,7 @@ def run(
                 with open(f'{txt_path}.txt', 'a') as f:
                     f.write(text + '\n')
 
-            # Append results to lists
+            # Write image filename and prediction results to lists
             lst_img.append(f'{p.name}')
             lst_top1.append(f'{names[top5i[0]]}')
             lst_top2.append(f'{names[top5i[1]]}')
@@ -222,9 +227,19 @@ def run(
             # Save results
             if save_img:
                 if dataset.mode == 'image':
-                    if sort_top1:
+                    if sort_top1 and not sort_prob:
                         Path(f'{save_path}/top1_classes/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
                         cv2.imwrite(f'{save_path}/top1_classes/{names[top5i[0]]}/{p.name}', im0)
+                    elif sort_top1 and sort_prob:
+                        if prob[top5i[0]] >= 0.8:
+                            Path(f'{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}/{p.name}', im0)
+                        elif 0.5 <= prob[top5i[0]] < 0.8:
+                            Path(f'{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}/{p.name}', im0)
+                        else:
+                            Path(f'{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}/{p.name}', im0)
                     else:
                         cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
@@ -261,7 +276,7 @@ def run(
     # Create folder to save results
     Path(f'{save_dir}/results').mkdir(parents=True, exist_ok=True)
 
-    # Write results to .csv
+    # Write prediction results to .csv
     df_results = pd.DataFrame(
         {'img_name': lst_img,
          'top1': lst_top1,
@@ -364,6 +379,7 @@ def parse_opt():
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
     parser.add_argument('--sort-top1', action='store_true', help='sort images to folders with predicted top1 class as folder name')
+    parser.add_argument('--sort-prob', action='store_true', help='sort images first by probability and then by top1 class (requires --sort-top1)')
     parser.add_argument('--concat-csv', action='store_true', help='concatenate metadata .csv files and append classification results')
     parser.add_argument('--new-csv', action='store_true', help='create new .csv file with classification results')
     opt = parser.parse_args()
