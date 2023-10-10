@@ -341,7 +341,12 @@ def run(
     if concat_csv:
         meta_csv_files = list(Path(source).parent.glob('**/metadata*.csv'))
         if len(meta_csv_files) > 0:
-            df_concat = pd.concat((pd.read_csv(f) for f in meta_csv_files), ignore_index=True)
+            df_all = []
+            for csv in meta_csv_files:
+                df_csv = pd.read_csv(csv)
+                if not df_csv.empty:
+                    df_all.append(df_csv)
+            df_concat = pd.concat(df_all, ignore_index=True)
             df_concat = pd.concat([df_concat, df_results.drop(columns=['img_name'])], axis=1)
             df_concat.to_csv(f'{save_dir}/results/{name}_metadata_classified.csv', index=False)
         else:
