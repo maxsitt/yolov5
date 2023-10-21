@@ -192,7 +192,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     if simplify:
         try:
             cuda = torch.cuda.is_available()
-            check_requirements(('onnxruntime-gpu' if cuda else 'onnxruntime', 'onnx-simplifier>=0.4.1'))
+            check_requirements(('onnxruntime-gpu', 'onnx-simplifier>=0.4.1'))
             import onnxsim
 
             LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
