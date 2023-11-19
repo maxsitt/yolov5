@@ -265,7 +265,7 @@ def run(
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
+        LOGGER.info(f"\nResults saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
@@ -343,9 +343,12 @@ def run(
         if len(meta_csv_files) > 0:
             df_all = []
             for csv in meta_csv_files:
-                df_csv = pd.read_csv(csv)
-                if not df_csv.empty:
-                    df_all.append(df_csv)
+                try:
+                    df_csv = pd.read_csv(csv)
+                    if not df_csv.empty:
+                        df_all.append(df_csv)
+                except pd.errors.EmptyDataError:
+                    print(f'\nBroken metadata*.csv file with no columns: {csv}')
             df_concat = pd.concat(df_all, ignore_index=True)
             df_concat = pd.concat([df_concat, df_results.drop(columns=['img_name'])], axis=1)
             df_concat.to_csv(f'{save_dir}/results/{name}_metadata_classified.csv', index=False)
