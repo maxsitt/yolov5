@@ -6,7 +6,7 @@ gitpython>=3.1.30
 matplotlib>=3.3
 numpy>=1.22.2
 opencv-python>=4.1.1
-Pillow>=10.0.1
+Pillow==10.0.1
 psutil  # system resources
 PyYAML>=5.3.1
 requests>=2.23.0
@@ -32,7 +32,6 @@ scikit-learn  # plot confusion matrix
 # coremltools>=6.0  # CoreML export
 onnx>=1.10.0  # ONNX export
 onnx-simplifier>=0.4.1  # ONNX simplifier
-onnxruntime-gpu # ONNX runtime for inference with ONNX model
 # nvidia-pyindex  # TensorRT export
 # nvidia-tensorrt  # TensorRT export
 # scikit-learn<=1.1.2  # CoreML quantization
@@ -43,6 +42,7 @@ onnxruntime-gpu # ONNX runtime for inference with ONNX model
 # Deploy ----------------------------------------------------------------------
 setuptools>=65.5.1 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
+onnxruntime # ONNX runtime for inference with .onnx model
 
 # Extras ----------------------------------------------------------------------
 # ipython  # interactive notebook
