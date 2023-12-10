@@ -3,6 +3,7 @@
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="500">
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
+[![DOI bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F2023.12.05.570242-B31B1B)](https://doi.org/10.1101/2023.12.05.570242)
 
 This fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository includes
 several modifications to the original scripts to improve classification model training,
