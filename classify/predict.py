@@ -80,8 +80,19 @@ from ultralytics.utils.plotting import Annotator
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
-from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, print_args, strip_optimizer)
+from utils.general import (
+    LOGGER,
+    Profile,
+    check_file,
+    check_img_size,
+    check_imshow,
+    check_requirements,
+    colorstr,
+    cv2,
+    increment_path,
+    print_args,
+    strip_optimizer,
+)
 from utils.torch_utils import select_device, smart_inference_mode
 
 # Set start time for script execution timer
@@ -89,19 +100,19 @@ start_time = time.monotonic()
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
-        source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
-        data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
+        weights=ROOT / "yolov5s-cls.pt",  # model.pt path(s)
+        source=ROOT / "data/images",  # file/dir/URL/glob/screen/0(webcam)
+        data=ROOT / "data/coco128.yaml",  # dataset.yaml path
         imgsz=(224, 224),  # inference size (height, width)
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device="",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
         nosave=False,  # do not save images/videos
         augment=False,  # augmented inference
         visualize=False,  # visualize features
         update=False,  # update all models
-        project=ROOT / 'runs/predict-cls',  # save results to project/name
-        name='exp',  # save results to project/name
+        project=ROOT / "runs/predict-cls",  # save results to project/name
+        name="exp",  # save results to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
@@ -112,17 +123,17 @@ def run(
         new_csv=False # create new .csv file with classification results
 ):
     source = str(source)
-    save_img = not nosave and not source.endswith('.txt')  # save inference images
+    save_img = not nosave and not source.endswith(".txt")  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
-    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = source.isnumeric() or source.endswith('.streams') or (is_url and not is_file)
-    screenshot = source.lower().startswith('screen')
+    is_url = source.lower().startswith(("rtsp://", "rtmp://", "http://", "https://"))
+    webcam = source.isnumeric() or source.endswith(".streams") or (is_url and not is_file)
+    screenshot = source.lower().startswith("screen")
     if is_url and is_file:
         source = check_file(source)  # download
 
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+    (save_dir / "labels" if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Load model
     device = select_device(device)
@@ -156,7 +167,7 @@ def run(
 
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
-    seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    seen, windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.Tensor(im).to(model.device)
@@ -177,18 +188,18 @@ def run(
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                s += f'{i}: '
+                s += f"{i}: "
             else:
-                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+                p, im0, frame = path, im0s.copy(), getattr(dataset, "frame", 0)
 
             p = Path(p)  # to Path
             if sort_top1:
                 save_path = str(save_dir)
             else:
                 save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            txt_path = str(save_dir / "labels" / p.stem) + ("" if dataset.mode == "image" else f"_{frame}")  # im.txt
 
-            s += '%gx%g ' % im.shape[2:]  # print string
+            s += "%gx%g " % im.shape[2:]  # print string
             annotator = Annotator(im0, example=str(names), pil=True)
 
             # Print results
@@ -198,12 +209,12 @@ def run(
             # Write results
             if not sort_top1:
                 if save_img or view_img:
-                    text = f'{names[top5i[0]]}\n{prob[top5i[0]]:.2f}'
+                    text = f"{names[top5i[0]]}\n{prob[top5i[0]]:.2f}"
                     annotator.text([2, 2], text, txt_color=(255, 255, 255))
             if save_txt:  # Write to file
-                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
-                with open(f'{txt_path}.txt', 'a') as f:
-                    f.write(text + '\n')
+                text = "\n".join(f"{prob[j]:.2f} {names[j]}" for j in top5i)
+                with open(f"{txt_path}.txt", "a") as f:
+                    f.write(text + "\n")
 
             # Write image filename and prediction results to lists
             lst_img.append(f'{p.name}')
@@ -217,7 +228,7 @@ def run(
             # Stream results
             im0 = annotator.result()
             if view_img:
-                if platform.system() == 'Linux' and p not in windows:
+                if platform.system() == "Linux" and p not in windows:
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
@@ -226,20 +237,20 @@ def run(
 
             # Save results
             if save_img:
-                if dataset.mode == 'image':
+                if dataset.mode == "image":
                     if sort_top1 and not sort_prob:
-                        Path(f'{save_path}/top1_classes/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
-                        cv2.imwrite(f'{save_path}/top1_classes/{names[top5i[0]]}/{p.name}', im0)
+                        Path(f"{save_path}/top1_classes/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
+                        cv2.imwrite(f"{save_path}/top1_classes/{names[top5i[0]]}/{p.name}", im0)
                     elif sort_top1 and sort_prob:
                         if prob[top5i[0]] >= 0.8:
-                            Path(f'{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}/{p.name}', im0)
+                            Path(f"{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}/{p.name}", im0)
                         elif 0.5 <= prob[top5i[0]] < 0.8:
-                            Path(f'{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}/{p.name}', im0)
+                            Path(f"{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}/{p.name}", im0)
                         else:
-                            Path(f'{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}').mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f'{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}/{p.name}', im0)
+                            Path(f"{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
+                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}/{p.name}", im0)
                     else:
                         cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
@@ -253,18 +264,18 @@ def run(
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
-                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        save_path = str(Path(save_path).with_suffix(".mp4"))  # force *.mp4 suffix on results videos
+                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
-        LOGGER.info(f'{s}{dt[1].dt * 1E3:.1f}ms')
+        LOGGER.info(f"{s}{dt[1].dt * 1E3:.1f}ms")
 
     # Print results
-    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
-    LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
+    t = tuple(x.t / seen * 1e3 for x in dt)  # speeds per image
+    LOGGER.info(f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}" % t)
     if save_txt or save_img:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ""
         LOGGER.info(f"\nResults saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
@@ -369,27 +380,27 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-cls.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[224], help='inference size h,w')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='show results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument('--visualize', action='store_true', help='visualize features')
-    parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default=ROOT / 'runs/predict-cls', help='save results to project/name')
-    parser.add_argument('--name', default='exp', help='save results to project/name')
-    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
-    parser.add_argument('--sort-top1', action='store_true', help='sort images to folders with predicted top1 class as folder name')
-    parser.add_argument('--sort-prob', action='store_true', help='sort images first by probability and then by top1 class (requires --sort-top1)')
-    parser.add_argument('--concat-csv', action='store_true', help='concatenate metadata .csv files and append classification results')
-    parser.add_argument('--new-csv', action='store_true', help='create new .csv file with classification results')
+    parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s-cls.pt", help="model path(s)")
+    parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
+    parser.add_argument("--data", type=str, default=ROOT / "data/coco128.yaml", help="(optional) dataset.yaml path")
+    parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[224], help="inference size h,w")
+    parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
+    parser.add_argument("--view-img", action="store_true", help="show results")
+    parser.add_argument("--save-txt", action="store_true", help="save results to *.txt")
+    parser.add_argument("--nosave", action="store_true", help="do not save images/videos")
+    parser.add_argument("--augment", action="store_true", help="augmented inference")
+    parser.add_argument("--visualize", action="store_true", help="visualize features")
+    parser.add_argument("--update", action="store_true", help="update all models")
+    parser.add_argument("--project", default=ROOT / "runs/predict-cls", help="save results to project/name")
+    parser.add_argument("--name", default="exp", help="save results to project/name")
+    parser.add_argument("--exist-ok", action="store_true", help="existing project/name ok, do not increment")
+    parser.add_argument("--half", action="store_true", help="use FP16 half-precision inference")
+    parser.add_argument("--dnn", action="store_true", help="use OpenCV DNN for ONNX inference")
+    parser.add_argument("--vid-stride", type=int, default=1, help="video frame-rate stride")
+    parser.add_argument("--sort-top1", action="store_true", help="sort images to folders with predicted top1 class as folder name")
+    parser.add_argument("--sort-prob", action="store_true", help="sort images first by probability and then by top1 class (requires --sort-top1)")
+    parser.add_argument("--concat-csv", action="store_true", help="concatenate metadata .csv files and append classification results")
+    parser.add_argument("--new-csv", action="store_true", help="create new .csv file with classification results")
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
@@ -397,10 +408,10 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     opt = parse_opt()
     main(opt)
