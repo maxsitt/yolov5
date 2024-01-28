@@ -100,27 +100,27 @@ start_time = time.monotonic()
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / "yolov5s-cls.pt",  # model.pt path(s)
-        source=ROOT / "data/images",  # file/dir/URL/glob/screen/0(webcam)
-        data=ROOT / "data/coco128.yaml",  # dataset.yaml path
-        imgsz=(224, 224),  # inference size (height, width)
-        device="",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img=False,  # show results
-        save_txt=False,  # save results to *.txt
-        nosave=False,  # do not save images/videos
-        augment=False,  # augmented inference
-        visualize=False,  # visualize features
-        update=False,  # update all models
-        project=ROOT / "runs/predict-cls",  # save results to project/name
-        name="exp",  # save results to project/name
-        exist_ok=False,  # existing project/name ok, do not increment
-        half=False,  # use FP16 half-precision inference
-        dnn=False,  # use OpenCV DNN for ONNX inference
-        vid_stride=1,  # video frame-rate stride
-        sort_top1=False, # sort images to folders with predicted top1 class as folder name
-        sort_prob=False, # sort images first by probability and then by top1 class
-        concat_csv=False, # concatenate metadata .csv files and append classification results
-        new_csv=False # create new .csv file with classification results
+    weights=ROOT / "yolov5s-cls.pt",  # model.pt path(s)
+    source=ROOT / "data/images",  # file/dir/URL/glob/screen/0(webcam)
+    data=ROOT / "data/coco128.yaml",  # dataset.yaml path
+    imgsz=(224, 224),  # inference size (height, width)
+    device="",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    view_img=False,  # show results
+    save_txt=False,  # save results to *.txt
+    nosave=False,  # do not save images/videos
+    augment=False,  # augmented inference
+    visualize=False,  # visualize features
+    update=False,  # update all models
+    project=ROOT / "runs/predict-cls",  # save results to project/name
+    name="exp",  # save results to project/name
+    exist_ok=False,  # existing project/name ok, do not increment
+    half=False,  # use FP16 half-precision inference
+    dnn=False,  # use OpenCV DNN for ONNX inference
+    vid_stride=1,  # video frame-rate stride
+    sort_top1=False, # sort images to folders with predicted top1 class as folder name
+    sort_prob=False, # sort images first by probability and then by top1 class
+    concat_csv=False, # concatenate metadata .csv files and append classification results
+    new_csv=False # create new .csv file with classification results
 ):
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
@@ -217,13 +217,13 @@ def run(
                     f.write(text + "\n")
 
             # Write image filename and prediction results to lists
-            lst_img.append(f'{p.name}')
-            lst_top1.append(f'{names[top5i[0]]}')
-            lst_top2.append(f'{names[top5i[1]]}')
-            lst_top3.append(f'{names[top5i[2]]}')
-            lst_top1_prob.append(f'{prob[top5i[0]]:.2f}')
-            lst_top2_prob.append(f'{prob[top5i[1]]:.2f}')
-            lst_top3_prob.append(f'{prob[top5i[2]]:.2f}')
+            lst_img.append(f"{p.name}")
+            lst_top1.append(f"{names[top5i[0]]}")
+            lst_top2.append(f"{names[top5i[1]]}")
+            lst_top3.append(f"{names[top5i[2]]}")
+            lst_top1_prob.append(f"{prob[top5i[0]]:.2f}")
+            lst_top2_prob.append(f"{prob[top5i[1]]:.2f}")
+            lst_top3_prob.append(f"{prob[top5i[2]]:.2f}")
 
             # Stream results
             im0 = annotator.result()
@@ -282,75 +282,75 @@ def run(
 
     # Print estimated inference time per image
     inference_runtime = time.monotonic() - start_inference
-    LOGGER.info(f'\nEstimated inference time per image: {round((inference_runtime / len(lst_img)) * 1000, 2)} ms')
+    LOGGER.info(f"\nEstimated inference time per image: {round((inference_runtime / len(lst_img)) * 1000, 2)} ms")
 
     # Create folder to save results
-    Path(f'{save_dir}/results').mkdir(parents=True, exist_ok=True)
+    Path(f"{save_dir}/results").mkdir(parents=True, exist_ok=True)
 
     # Write prediction results to .csv
     df_results = pd.DataFrame(
-        {'img_name': lst_img,
-         'top1': lst_top1,
-         'top1_prob': lst_top1_prob,
-         'top2': lst_top2,
-         'top2_prob': lst_top2_prob,
-         'top3': lst_top3,
-         'top3_prob': lst_top3_prob
+        {"img_name": lst_img,
+         "top1": lst_top1,
+         "top1_prob": lst_top1_prob,
+         "top2": lst_top2,
+         "top2_prob": lst_top2_prob,
+         "top3": lst_top3,
+         "top3_prob": lst_top3_prob
         })
-    df_results['top1_prob'] = pd.to_numeric(df_results['top1_prob'])
-    df_results['top2_prob'] = pd.to_numeric(df_results['top2_prob'])
-    df_results['top3_prob'] = pd.to_numeric(df_results['top3_prob'])
-    df_results.to_csv(f'{save_dir}/results/pred_results.csv', index=False)
+    df_results["top1_prob"] = pd.to_numeric(df_results["top1_prob"])
+    df_results["top2_prob"] = pd.to_numeric(df_results["top2_prob"])
+    df_results["top3_prob"] = pd.to_numeric(df_results["top3_prob"])
+    df_results.to_csv(f"{save_dir}/results/pred_results.csv", index=False)
 
     # Write mean classification probability per top 1 class to .csv
     df_top1_prob = pd.DataFrame(
-        {'top1': (df_results['top1'].sort_values()
+        {"top1": (df_results["top1"].sort_values()
                                     .unique()),
-         'top1_prob_mean': (df_results.groupby(['top1'])['top1_prob']
+         "top1_prob_mean": (df_results.groupby(["top1"])["top1_prob"]
                                       .mean()
                                       .round(2)
                                       .reset_index(drop=True))
         })
-    df_top1_prob.to_csv(f'{save_dir}/results/top1_prob_mean.csv', index=False)
+    df_top1_prob.to_csv(f"{save_dir}/results/top1_prob_mean.csv", index=False)
 
     # Plot boxplot with the classification probability per top 1 class
-    (df_results.plot(kind='box',
-                     column='top1_prob',
-                     by='top1',
+    (df_results.plot(kind="box",
+                     column="top1_prob",
+                     by="top1",
                      rot=90,
                      ylim=(0, 1),
                      yticks=([x/10 for x in range(0, 11)]),
                      figsize=(15, 10),
-                     xlabel='Top 1 class',
-                     ylabel='Classification probability'))
-    plt.rcParams['axes.axisbelow'] = True
-    plt.grid(axis='y', color='gray', linewidth=0.5, alpha=0.2)
-    plt.suptitle('')
-    plt.title('Classification probability per top 1 class')
-    plt.savefig(f'{save_dir}/results/top1_prob.png', dpi=300, bbox_inches='tight')
+                     xlabel="Top 1 class",
+                     ylabel="Classification probability"))
+    plt.rcParams["axes.axisbelow"] = True
+    plt.grid(axis="y", color="gray", linewidth=0.5, alpha=0.2)
+    plt.suptitle("")
+    plt.title("Classification probability per top 1 class")
+    plt.savefig(f"{save_dir}/results/top1_prob.png", dpi=300, bbox_inches="tight")
     plt.close()
 
     # Plot barplot with the mean classification probability per top 1 class
-    (df_top1_prob.sort_values(by='top1_prob_mean', ascending=False)
-                 .plot(kind='bar',
-                       x='top1',
-                       y='top1_prob_mean',
-                       edgecolor='black',
+    (df_top1_prob.sort_values(by="top1_prob_mean", ascending=False)
+                 .plot(kind="bar",
+                       x="top1",
+                       y="top1_prob_mean",
+                       edgecolor="black",
                        rot=90,
                        ylim=(0, 1),
                        yticks=([x/10 for x in range(0, 11)]),
                        figsize=(15, 10),
                        legend=False,
-                       xlabel='Top 1 class',
-                       ylabel='Mean classification probability',
-                       title='Mean classification probability per top 1 class'))
-    plt.grid(axis='y', color='gray', linewidth=0.5, alpha=0.2)
-    plt.savefig(f'{save_dir}/results/top1_prob_mean.png', dpi=300, bbox_inches='tight')
+                       xlabel="Top 1 class",
+                       ylabel="Mean classification probability",
+                       title="Mean classification probability per top 1 class"))
+    plt.grid(axis="y", color="gray", linewidth=0.5, alpha=0.2)
+    plt.savefig(f"{save_dir}/results/top1_prob_mean.png", dpi=300, bbox_inches="tight")
     plt.close()
 
     # Concatenate all metadata .csv files and add new columns with classification results
     if concat_csv:
-        meta_csv_files = list(Path(source).parent.glob('**/metadata*.csv'))
+        meta_csv_files = list(Path(source).parent.glob("**/metadata*.csv"))
         if len(meta_csv_files) > 0:
             df_all = []
             for csv in meta_csv_files:
@@ -359,23 +359,23 @@ def run(
                     if not df_csv.empty:
                         df_all.append(df_csv)
                 except pd.errors.EmptyDataError:
-                    print(f'\nBroken metadata*.csv file with no columns: {csv}')
+                    print(f"\nBroken metadata*.csv file with no columns: {csv}")
             df_concat = pd.concat(df_all, ignore_index=True)
-            df_concat = pd.concat([df_concat, df_results.drop(columns=['img_name'])], axis=1)
-            df_concat.to_csv(f'{save_dir}/results/{name}_metadata_classified.csv', index=False)
+            df_concat = pd.concat([df_concat, df_results.drop(columns=["img_name"])], axis=1)
+            df_concat.to_csv(f"{save_dir}/results/{name}_metadata_classified.csv", index=False)
         else:
-            print('\nCould not find any metadata*.csv files!')
+            print("\nCould not find any metadata*.csv files!")
 
     # Write classification results to new .csv file and extract timestamp + tracking ID
     if new_csv:
         df_new = df_results
-        df_new.insert(1, 'timestamp', df_new['img_name'].str[:24])
-        df_new.insert(2, 'track_ID', df_new['img_name'].str[10:].str.extract('_(.*)_crop'))
-        df_new.to_csv(f'{save_dir}/results/{name}_data_classified.csv', index=False)
+        df_new.insert(1, "timestamp", df_new["img_name"].str[:24])
+        df_new.insert(2, "track_ID", df_new["img_name"].str[10:].str.extract("_(.*)_crop"))
+        df_new.to_csv(f"{save_dir}/results/{name}_data_classified.csv", index=False)
 
     # Print script run time
     script_runtime = time.monotonic() - start_time
-    LOGGER.info(f'\nScript run time: {round(script_runtime / 60, 3)} min\n')
+    LOGGER.info(f"\nScript run time: {round(script_runtime / 60, 3)} min\n")
 
 
 def parse_opt():

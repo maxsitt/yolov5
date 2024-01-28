@@ -85,7 +85,7 @@ def run(
     dataloader=None,
     criterion=None,
     pbar=None,
-    task='val',  # val or test dataset split for validation
+    task="val",  # val or test dataset split for validation
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -117,15 +117,12 @@ def run(
         data = Path(data)
         task = task if task in ("val", "test") else "val"
         if task == "val":
-          test_dir = data / "val" if (data / "val").exists() else data / "test"  # data/val or data/test
+            test_dir = data / "val" if (data / "val").exists() else data / "test"  # data/val or data/test
         if task == "test":
-          test_dir = data / "test" if (data / "test").exists() else data / "val"  # data/test or data/val
-        dataloader = create_classification_dataloader(path=test_dir,
-                                                      imgsz=imgsz,
-                                                      batch_size=batch_size,
-                                                      augment=False,
-                                                      rank=-1,
-                                                      workers=workers)
+            test_dir = data / "test" if (data / "test").exists() else data / "val"  # data/test or data/val
+        dataloader = create_classification_dataloader(
+            path=test_dir, imgsz=imgsz, batch_size=batch_size, augment=False, rank=-1, workers=workers
+        )
 
     model.eval()
     pred, targets, loss, dt = [], [], 0, (Profile(device=device), Profile(device=device), Profile(device=device))
@@ -184,12 +181,12 @@ def run(
         # Write results to .csv
         class_names = list(dict(model.names.items()).values())
         df_results = pd.DataFrame(
-            {'class': ['all'] + class_names,
-             'images': lst_images,
-             'top1_acc': lst_top1_acc,
-             'top5_acc': lst_top5_acc
+            {"class": ["all"] + class_names,
+             "images": lst_images,
+             "top1_acc": lst_top1_acc,
+             "top5_acc": lst_top5_acc
             })
-        df_results.to_csv(f'{save_dir}/valid_results_{task}.csv', index=False)
+        df_results.to_csv(f"{save_dir}/valid_results_{task}.csv", index=False)
 
         # Write true classes and predicted classes to list
         classes_true = targets.tolist()
@@ -198,16 +195,16 @@ def run(
         # Write metrics to .csv
         report = classification_report(classes_true, classes_pred, target_names=class_names, output_dict=True)
         df_metrics = (pd.DataFrame(report).transpose()
-                                          .drop(['accuracy'])
-                                          .rename({'macro avg': 'all', 'weighted avg': 'all_weighted'})
-                                          .rename(columns={'support': 'images'})
-                                          .astype({'images': int})
+                                          .drop(["accuracy"])
+                                          .rename({"macro avg": "all", "weighted avg": "all_weighted"})
+                                          .rename(columns={"support": "images"})
+                                          .astype({"images": int})
                                           .round(3))
-        df_metrics_all = df_metrics.loc[['all', 'all_weighted']]
-        df_metrics = (pd.concat([df_metrics_all, df_metrics.drop(['all', 'all_weighted'])])
-                        .reset_index(names='class'))
-        df_metrics = df_metrics[['class', 'images', 'precision', 'recall', 'f1-score']]
-        df_metrics.to_csv(f'{save_dir}/valid_metrics_{task}.csv', index=False)
+        df_metrics_all = df_metrics.loc[["all", "all_weighted"]]
+        df_metrics = (pd.concat([df_metrics_all, df_metrics.drop(["all", "all_weighted"])])
+                        .reset_index(names="class"))
+        df_metrics = df_metrics[["class", "images", "precision", "recall", "f1-score"]]
+        df_metrics.to_csv(f"{save_dir}/valid_metrics_{task}.csv", index=False)
 
         # Plot results as confusion matrix
         number_classes = len(class_names)
@@ -223,14 +220,14 @@ def run(
             font_size, font_size_values = 12, 10
         else:
             font_size, font_size_values = 12, 12
-        cf_matrix = np.around(confusion_matrix(classes_true, classes_pred, normalize='true'), 3)
+        cf_matrix = np.around(confusion_matrix(classes_true, classes_pred, normalize="true"), 3)
         cf_matrix_plot = ConfusionMatrixDisplay(cf_matrix, display_labels=class_names)
-        plt.rcParams.update({'font.size': font_size})
-        cf_matrix_plot.plot(cmap='Blues', xticks_rotation='vertical', values_format='.2g')
+        plt.rcParams.update({"font.size": font_size})
+        cf_matrix_plot.plot(cmap="Blues", xticks_rotation="vertical", values_format=".2g")
         for values in cf_matrix_plot.text_.ravel():
             values.set_fontsize(font_size_values)
-        cf_matrix_plot.ax_.set_title('Normalized confusion matrix')
-        plt.savefig(f'{save_dir}/confusion_matrix_{task}.png', dpi=600, bbox_inches='tight')
+        cf_matrix_plot.ax_.set_title("Normalized confusion matrix")
+        plt.savefig(f"{save_dir}/confusion_matrix_{task}.png", dpi=600, bbox_inches="tight")
         plt.close()
 
     return top1, top5, loss
