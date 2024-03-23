@@ -379,6 +379,7 @@ def run(
 
 
 def parse_opt():
+    """Parses command line arguments for YOLOv5 inference settings including model, source, device, and image size."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s-cls.pt", help="model path(s)")
     parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
@@ -408,6 +409,7 @@ def parse_opt():
 
 
 def main(opt):
+    """Executes YOLOv5 model inference with options for ONNX DNN and video frame-rate stride adjustments."""
     check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
     run(**vars(opt))
 
