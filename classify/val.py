@@ -21,9 +21,10 @@ Usage - formats:
 
 ---
 
-Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
-Website:      https://maxsitt.github.io/insect-detect-docs/
+Source:       https://github.com/maxsitt/yolov5
 License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Docs:         https://maxsitt.github.io/insect-detect-docs/
 
 Modifications:
 - add additional option (argparse argument):
@@ -168,25 +169,26 @@ def run(
 
     if not training:
         # Write number of images and top1 + top5 acc per class to list
-        lst_images = [targets.shape[0]]
-        lst_top1_acc = [round(top1, 3)]
-        lst_top5_acc = [round(top5, 3)]
-        for i, c in model.names.items():
+        images_list = [targets.shape[0]]
+        top1_acc_list = [round(top1, 3)]
+        top5_acc_list = [round(top5, 3)]
+
+        class_names = list(model.names.values())
+        for i, c in enumerate(class_names):
             acc_i = acc[targets == i]
             top1i, top5i = acc_i.mean(0).tolist()
-            lst_images.append(acc_i.shape[0])
-            lst_top1_acc.append(round(top1i, 3))
-            lst_top5_acc.append(round(top5i, 3))
+            images_list.append(acc_i.shape[0])
+            top1_acc_list.append(round(top1i, 3))
+            top5_acc_list.append(round(top5i, 3))
 
         # Write results to .csv
-        class_names = list(dict(model.names.items()).values())
         df_results = pd.DataFrame(
             {"class": ["all"] + class_names,
-             "images": lst_images,
-             "top1_acc": lst_top1_acc,
-             "top5_acc": lst_top5_acc
+             "images": images_list,
+             "top1_acc": top1_acc_list,
+             "top5_acc": top5_acc_list
             })
-        df_results.to_csv(f"{save_dir}/valid_results_{task}.csv", index=False)
+        df_results.to_csv(save_dir / f"valid_results_{task}.csv", index=False)
 
         # Write true classes and predicted classes to list
         classes_true = targets.tolist()
@@ -204,7 +206,7 @@ def run(
         df_metrics = (pd.concat([df_metrics_all, df_metrics.drop(["all", "all_weighted"])])
                         .reset_index(names="class"))
         df_metrics = df_metrics[["class", "images", "precision", "recall", "f1-score"]]
-        df_metrics.to_csv(f"{save_dir}/valid_metrics_{task}.csv", index=False)
+        df_metrics.to_csv(save_dir / f"valid_metrics_{task}.csv", index=False)
 
         # Plot results as confusion matrix
         number_classes = len(class_names)
@@ -227,7 +229,7 @@ def run(
         for values in cf_matrix_plot.text_.ravel():
             values.set_fontsize(font_size_values)
         cf_matrix_plot.ax_.set_title("Normalized confusion matrix")
-        plt.savefig(f"{save_dir}/confusion_matrix_{task}.png", dpi=600, bbox_inches="tight")
+        plt.savefig(save_dir / f"confusion_matrix_{task}.png", dpi=600, bbox_inches="tight")
         plt.close()
 
     return top1, top5, loss
