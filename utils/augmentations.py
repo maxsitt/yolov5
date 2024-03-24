@@ -4,14 +4,16 @@ Image augmentation functions
 
 ---
 
-Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
-Website:      https://maxsitt.github.io/insect-detect-docs/
+Source:       https://github.com/maxsitt/yolov5
 License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Docs:         https://maxsitt.github.io/insect-detect-docs/
 
 Modifications:
 - add class Resize to classify_transforms() for resizing the images during preprocessing
-  without preserving aspect ratio and make it the default method (no visual information
-  is lost compared to CenterCrop; no potential bias is introduced compared to LetterBox)
+  without preserving aspect ratio and make it the default method
+  -> no visual information is lost compared to CenterCrop
+  -> no potential bias of padding is introduced compared to LetterBox
 """
 
 import math

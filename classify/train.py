@@ -14,9 +14,10 @@ Torchvision models: --model resnet50, efficientnet_b0, etc. See https://pytorch.
 
 ---
 
-Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
-Website:      https://maxsitt.github.io/insect-detect-docs/
+Source:       https://github.com/maxsitt/yolov5
 License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Docs:         https://maxsitt.github.io/insect-detect-docs/
 
 Modifications:
 - use data_dir / 'val' as test_dir to get the images for validation by default (instead of data_dir / 'test')
