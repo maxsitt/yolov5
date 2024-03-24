@@ -5,8 +5,8 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
 [![DOI bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F2023.12.05.570242-B31B1B)](https://doi.org/10.1101/2023.12.05.570242)
 
-This fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository includes
-several modifications to the original scripts to improve classification model training,
+In this fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository, several
+of the original scripts were modified to customize classification model training,
 validation and prediction. The modifications are specifically adapted to data captured
 with the [Insect Detect](https://maxsitt.github.io/insect-detect-docs/) DIY camera trap.
 
@@ -22,7 +22,23 @@ The current [modifications](https://github.com/ultralytics/yolov5/compare/master
 
 ---
 
-Use the provided Google Colab notebook to train a YOLOv5 image classification model on your own dataset:
+## Classification
+
+The modified [`classify/predict.py`](https://github.com/maxsitt/yolov5/blob/master/classify/predict.py)
+script includes the following added options:
+
+- `--sort-top1` sort the classified images to folders with the predicted top1 class as folder name
+- `--sort-prob` sort images first by probability and then by top1 class (requires --sort-top1)
+- `--concat-csv` concatenate all metadata .csv files and append classification results to new columns
+
+More information about deployment of the classification script can be found in the
+[**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/deployment/classification/) 📑.
+
+---
+
+## Model training
+
+Use the provided Google Colab notebook to train an image classification model on your own dataset:
 
 **YOLOv5 classification model training** &nbsp;
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maxsitt/insect-detect-ml/blob/main/notebooks/YOLOv5_classification_training.ipynb)
@@ -30,8 +46,9 @@ Use the provided Google Colab notebook to train a YOLOv5 image classification mo
 > The notebook for classification model training includes [export](https://github.com/ultralytics/yolov5/issues/251)
   to [ONNX](https://onnx.ai/) format for faster CPU inference.
 
-More information about custom model training can be found at the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml)
-GitHub repo and at the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_classification/) 📑.
+You can find more information about classification model training in the
+[`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml) GitHub
+repo and the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_classification/) 📑.
 
 ---
 
