@@ -29,16 +29,16 @@ Usage - formats:
 
 ---
 
-Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
-Website:      https://maxsitt.github.io/insect-detect-docs/
+Source:       https://github.com/maxsitt/yolov5
 License:      GNU AGPLv3 (https://choosealicense.com/licenses/agpl-3.0/)
+Modified by:  Maximilian Sittinger (https://github.com/maxsitt)
+Docs:         https://maxsitt.github.io/insect-detect-docs/
 
 Modifications:
 - add additional options (argparse arguments):
   '--sort-top1' sort images to folders with predicted top1 class as folder name
   '--sort-prob' sort images first by probability and then by top1 class (requires --sort-top1)
   '--concat-csv' concatenate metadata .csv files and append classification results
-  '--new-csv' create new .csv file with classification results
 - write only top1 class + prob on to image in top left corner (if not sort-top1)
 - save classification results to lists (image filename and top1, top2, top3 class + probability)
 - sort images to folders with predicted top1 class as folder name
@@ -119,8 +119,7 @@ def run(
     vid_stride=1,  # video frame-rate stride
     sort_top1=False, # sort images to folders with predicted top1 class as folder name
     sort_prob=False, # sort images first by probability and then by top1 class
-    concat_csv=False, # concatenate metadata .csv files and append classification results
-    new_csv=False # create new .csv file with classification results
+    concat_csv=False # concatenate metadata .csv files and append classification results
 ):
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
@@ -193,10 +192,7 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, "frame", 0)
 
             p = Path(p)  # to Path
-            if sort_top1:
-                save_path = str(save_dir)
-            else:
-                save_path = str(save_dir / p.name)  # im.jpg
+            save_path = str(save_dir) if sort_top1 else str(save_dir / p.name)
             txt_path = str(save_dir / "labels" / p.stem) + ("" if dataset.mode == "image" else f"_{frame}")  # im.txt
 
             s += "%gx%g " % im.shape[2:]  # print string
@@ -238,19 +234,18 @@ def run(
             # Save results
             if save_img:
                 if dataset.mode == "image":
-                    if sort_top1 and not sort_prob:
-                        Path(f"{save_path}/top1_classes/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
-                        cv2.imwrite(f"{save_path}/top1_classes/{names[top5i[0]]}/{p.name}", im0)
-                    elif sort_top1 and sort_prob:
-                        if prob[top5i[0]] >= 0.8:
-                            Path(f"{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.8-1.0/{names[top5i[0]]}/{p.name}", im0)
-                        elif 0.5 <= prob[top5i[0]] < 0.8:
-                            Path(f"{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.5-0.8/{names[top5i[0]]}/{p.name}", im0)
-                        else:
-                            Path(f"{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}").mkdir(parents=True, exist_ok=True)
-                            cv2.imwrite(f"{save_path}/top1_classes/prob_0.0-0.5/{names[top5i[0]]}/{p.name}", im0)
+                    if sort_top1:
+                        img_path = f"{save_path}/top1_classes"
+                        if sort_prob:
+                            if prob[top5i[0]] >= 0.8:
+                                img_path += "/prob_0.8-1.0"
+                            elif 0.5 <= prob[top5i[0]] < 0.8:
+                                img_path += "/prob_0.5-0.8"
+                            else:
+                                img_path += "/prob_0.0-0.5"
+                        img_path += f"/{names[top5i[0]]}"
+                        Path(img_path).mkdir(parents=True, exist_ok=True)
+                        cv2.imwrite(f"{img_path}/{p.name}", im0)
                     else:
                         cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
@@ -285,7 +280,7 @@ def run(
     LOGGER.info(f"\nEstimated inference time per image: {round((inference_runtime / len(lst_img)) * 1000, 2)} ms")
 
     # Create folder to save results
-    Path(f"{save_dir}/results").mkdir(parents=True, exist_ok=True)
+    (save_dir / "results").mkdir(parents=True, exist_ok=True)
 
     # Write prediction results to .csv
     df_results = pd.DataFrame(
@@ -300,7 +295,7 @@ def run(
     df_results["top1_prob"] = pd.to_numeric(df_results["top1_prob"])
     df_results["top2_prob"] = pd.to_numeric(df_results["top2_prob"])
     df_results["top3_prob"] = pd.to_numeric(df_results["top3_prob"])
-    df_results.to_csv(f"{save_dir}/results/pred_results.csv", index=False)
+    df_results.to_csv(save_dir / "results" / "pred_results.csv", index=False)
 
     # Write mean classification probability per top 1 class to .csv
     df_top1_prob = pd.DataFrame(
@@ -311,7 +306,7 @@ def run(
                                       .round(2)
                                       .reset_index(drop=True))
         })
-    df_top1_prob.to_csv(f"{save_dir}/results/top1_prob_mean.csv", index=False)
+    df_top1_prob.to_csv(save_dir / "results" / "top1_prob_mean.csv", index=False)
 
     # Plot boxplot with the classification probability per top 1 class
     (df_results.plot(kind="box",
@@ -327,7 +322,7 @@ def run(
     plt.grid(axis="y", color="gray", linewidth=0.5, alpha=0.2)
     plt.suptitle("")
     plt.title("Classification probability per top 1 class")
-    plt.savefig(f"{save_dir}/results/top1_prob.png", dpi=300, bbox_inches="tight")
+    plt.savefig(save_dir / "results" / "top1_prob.png", dpi=300, bbox_inches="tight")
     plt.close()
 
     # Plot barplot with the mean classification probability per top 1 class
@@ -345,33 +340,29 @@ def run(
                        ylabel="Mean classification probability",
                        title="Mean classification probability per top 1 class"))
     plt.grid(axis="y", color="gray", linewidth=0.5, alpha=0.2)
-    plt.savefig(f"{save_dir}/results/top1_prob_mean.png", dpi=300, bbox_inches="tight")
+    plt.savefig(save_dir / "results" / "top1_prob_mean.png", dpi=300, bbox_inches="tight")
     plt.close()
 
-    # Concatenate all metadata .csv files and add new columns with classification results
     if concat_csv:
-        meta_csv_files = list(Path(source).parent.glob("**/metadata*.csv"))
-        if len(meta_csv_files) > 0:
+        # Concatenate all metadata .csv files and add new columns with classification results
+        metadata_csv_files = list(Path(source).parent.glob("**/*metadata*.csv"))
+        if metadata_csv_files:
             df_all = []
-            for csv in meta_csv_files:
+            for csv in metadata_csv_files:
                 try:
                     df_csv = pd.read_csv(csv)
                     if not df_csv.empty:
                         df_all.append(df_csv)
                 except pd.errors.EmptyDataError:
-                    print(f"\nBroken metadata*.csv file with no columns: {csv}")
-            df_concat = pd.concat(df_all, ignore_index=True)
-            df_concat = pd.concat([df_concat, df_results.drop(columns=["img_name"])], axis=1)
-            df_concat.to_csv(f"{save_dir}/results/{name}_metadata_classified.csv", index=False)
+                    print(f"\nMetadata .csv file with no content: {csv}")
+            if df_all:
+                df_concat = pd.concat(df_all, ignore_index=True)
+                df_concat = pd.concat([df_concat, df_results.drop(columns=["img_name"])], axis=1)
+                df_concat.to_csv(save_dir / "results" / f"{name}_metadata_classified.csv", index=False)
+            else:
+                print("\nCould not find any metadata .csv files with content!")
         else:
-            print("\nCould not find any metadata*.csv files!")
-
-    # Write classification results to new .csv file and extract timestamp + tracking ID
-    if new_csv:
-        df_new = df_results
-        df_new.insert(1, "timestamp", df_new["img_name"].str[:24])
-        df_new.insert(2, "track_ID", df_new["img_name"].str[10:].str.extract("_(.*)_crop"))
-        df_new.to_csv(f"{save_dir}/results/{name}_data_classified.csv", index=False)
+            print(f"\nCould not find any metadata .csv files in {Path(source).parent}!")
 
     # Print script run time
     script_runtime = time.monotonic() - start_time
@@ -401,7 +392,6 @@ def parse_opt():
     parser.add_argument("--sort-top1", action="store_true", help="sort images to folders with predicted top1 class as folder name")
     parser.add_argument("--sort-prob", action="store_true", help="sort images first by probability and then by top1 class (requires --sort-top1)")
     parser.add_argument("--concat-csv", action="store_true", help="concatenate metadata .csv files and append classification results")
-    parser.add_argument("--new-csv", action="store_true", help="create new .csv file with classification results")
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
