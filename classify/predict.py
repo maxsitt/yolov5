@@ -46,14 +46,12 @@ Modifications:
 - sort images first by top1 probability (0-0.5, 0.5-0.8, 0.8-1) and then by top1 class
   and do not write top1 class + prob on to image as text (if sort-top1 + sort-prob)
 - print estimated inference time per image
-- write classification results to 'results/pred_results.csv'
-- write mean classification probability per top 1 class to '/results/top1_prob_mean.csv'
+- write classification results to 'results/classification_results.csv'
+- write mean classification probability per top 1 class to 'results/top1_prob_mean.csv'
 - save boxplot with the classification probability per top 1 class as 'results/top1_prob.png'
 - save barplot with the mean classification probability per top 1 class as 'results/top1_prob_mean.png'
-- concatenate all metadata .csv files in the 'data' folder and add new columns with
+- concatenate all available metadata .csv files and add new columns with
   classification results, save to 'results/{name}_metadata_classified.csv' (if concat-csv)
-- create new .csv file with classification results and timestamp + tracking ID
-  extracted from image filename, save to 'results/{name}_data_classified.csv' (if new-csv)
 - print script run time
 """
 
@@ -153,13 +151,13 @@ def run(
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Create empty lists to save image filename and top1,top2,top3 class + probability
-    lst_img = []
-    lst_top1 = []
-    lst_top2 = []
-    lst_top3 = []
-    lst_top1_prob = []
-    lst_top2_prob = []
-    lst_top3_prob = []
+    img_name_list = []
+    top1_list = []
+    top2_list = []
+    top3_list = []
+    top1_prob_list = []
+    top2_prob_list = []
+    top3_prob_list = []
 
     # Set start time of inference
     start_inference = time.monotonic()
@@ -212,14 +210,14 @@ def run(
                 with open(f"{txt_path}.txt", "a") as f:
                     f.write(text + "\n")
 
-            # Write image filename and prediction results to lists
-            lst_img.append(f"{p.name}")
-            lst_top1.append(f"{names[top5i[0]]}")
-            lst_top2.append(f"{names[top5i[1]]}")
-            lst_top3.append(f"{names[top5i[2]]}")
-            lst_top1_prob.append(f"{prob[top5i[0]]:.2f}")
-            lst_top2_prob.append(f"{prob[top5i[1]]:.2f}")
-            lst_top3_prob.append(f"{prob[top5i[2]]:.2f}")
+            # Write image filename and classification results to lists
+            img_name_list.append(f"{p.name}")
+            top1_list.append(f"{names[top5i[0]]}")
+            top2_list.append(f"{names[top5i[1]]}")
+            top3_list.append(f"{names[top5i[2]]}")
+            top1_prob_list.append(f"{prob[top5i[0]]:.2f}")
+            top2_prob_list.append(f"{prob[top5i[1]]:.2f}")
+            top3_prob_list.append(f"{prob[top5i[2]]:.2f}")
 
             # Stream results
             im0 = annotator.result()
@@ -235,8 +233,10 @@ def run(
             if save_img:
                 if dataset.mode == "image":
                     if sort_top1:
+                        # Sort images by top1 class
                         img_path = f"{save_path}/top1_classes"
                         if sort_prob:
+                            # Sort images by probability
                             if prob[top5i[0]] >= 0.8:
                                 img_path += "/prob_0.8-1.0"
                             elif 0.5 <= prob[top5i[0]] < 0.8:
@@ -277,30 +277,29 @@ def run(
 
     # Print estimated inference time per image
     inference_runtime = time.monotonic() - start_inference
-    LOGGER.info(f"\nEstimated inference time per image: {round((inference_runtime / len(lst_img)) * 1000, 2)} ms")
+    LOGGER.info(f"\nEstimated inference time per image: {round((inference_runtime / len(img_name_list)) * 1000, 2)} ms")
 
     # Create folder to save results
     (save_dir / "results").mkdir(parents=True, exist_ok=True)
 
-    # Write prediction results to .csv
+    # Write classification results to .csv
     df_results = pd.DataFrame(
-        {"img_name": lst_img,
-         "top1": lst_top1,
-         "top1_prob": lst_top1_prob,
-         "top2": lst_top2,
-         "top2_prob": lst_top2_prob,
-         "top3": lst_top3,
-         "top3_prob": lst_top3_prob
+        {"img_name": img_name_list,
+         "top1": top1_list,
+         "top1_prob": top1_prob_list,
+         "top2": top2_list,
+         "top2_prob": top2_prob_list,
+         "top3": top3_list,
+         "top3_prob": top3_prob_list
         })
     df_results["top1_prob"] = pd.to_numeric(df_results["top1_prob"])
     df_results["top2_prob"] = pd.to_numeric(df_results["top2_prob"])
     df_results["top3_prob"] = pd.to_numeric(df_results["top3_prob"])
-    df_results.to_csv(save_dir / "results" / "pred_results.csv", index=False)
+    df_results.to_csv(save_dir / "results" / "classification_results.csv", index=False)
 
     # Write mean classification probability per top 1 class to .csv
     df_top1_prob = pd.DataFrame(
-        {"top1": (df_results["top1"].sort_values()
-                                    .unique()),
+        {"top1": df_results["top1"].sort_values().unique(),
          "top1_prob_mean": (df_results.groupby(["top1"])["top1_prob"]
                                       .mean()
                                       .round(2)
@@ -308,7 +307,7 @@ def run(
         })
     df_top1_prob.to_csv(save_dir / "results" / "top1_prob_mean.csv", index=False)
 
-    # Plot boxplot with the classification probability per top 1 class
+    # Create boxplot with the classification probability per top 1 class
     (df_results.plot(kind="box",
                      column="top1_prob",
                      by="top1",
@@ -325,7 +324,7 @@ def run(
     plt.savefig(save_dir / "results" / "top1_prob.png", dpi=300, bbox_inches="tight")
     plt.close()
 
-    # Plot barplot with the mean classification probability per top 1 class
+    # Create barplot with the mean classification probability per top 1 class
     (df_top1_prob.sort_values(by="top1_prob_mean", ascending=False)
                  .plot(kind="bar",
                        x="top1",
