@@ -268,16 +268,16 @@ def run(
 
     # Print results
     t = tuple(x.t / seen * 1e3 for x in dt)  # speeds per image
-    LOGGER.info(f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}" % t)
+    LOGGER.info(f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}\n" % t)
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ""
-        LOGGER.info(f"\nResults saved to {colorstr('bold', save_dir)}{s}")
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}\n")
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
     # Print estimated inference time per image
     inference_runtime = time.monotonic() - start_inference
-    LOGGER.info(f"\nEstimated inference time per image: {round((inference_runtime / len(img_name_list)) * 1000, 2)} ms")
+    LOGGER.info(f"Estimated inference time per image: {round((inference_runtime / len(img_name_list)) * 1000, 2)} ms\n")
 
     # Create folder to save results
     (save_dir / "results").mkdir(parents=True, exist_ok=True)
@@ -353,19 +353,19 @@ def run(
                     if not df_csv.empty:
                         df_all.append(df_csv)
                 except pd.errors.EmptyDataError:
-                    print(f"\nMetadata .csv file with no content: {csv}")
+                    LOGGER.warning(f"Metadata .csv file with no content: {csv}\n")
             if df_all:
                 df_concat = pd.concat(df_all, ignore_index=True)
                 df_concat = pd.concat([df_concat, df_results.drop(columns=["img_name"])], axis=1)
                 df_concat.to_csv(save_dir / "results" / f"{name}_metadata_classified.csv", index=False)
             else:
-                print("\nCould not find any metadata .csv files with content!")
+                LOGGER.warning(f"Could not find any metadata .csv files with content in {Path(source).parent.resolve()}\n")
         else:
-            print(f"\nCould not find any metadata .csv files in {Path(source).parent}!")
+            LOGGER.warning(f"Could not find any metadata .csv files in {Path(source).parent.resolve()}\n")
 
     # Print script run time
     script_runtime = time.monotonic() - start_time
-    LOGGER.info(f"\nScript run time: {round(script_runtime / 60, 3)} min\n")
+    LOGGER.info(f"Script run time: {round(script_runtime / 60, 3)} min\n")
 
 
 def parse_opt():
