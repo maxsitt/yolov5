@@ -1,9 +1,9 @@
 # YOLOv5 for the Insect Detect DIY camera trap
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="500">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="540">
 
+[![DOI PLOS ONE](https://img.shields.io/badge/PLOS%20ONE-10.1371%2Fjournal.pone.0295474-BD3094)](https://doi.org/10.1371/journal.pone.0295474)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
-[![DOI bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F2023.12.05.570242-B31B1B)](https://doi.org/10.1101/2023.12.05.570242)
 
 In this fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository, several
 of the original scripts were modified to customize classification model training,
@@ -51,6 +51,23 @@ You can find more information about classification model training in the
 repo and the [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/modeltraining/train_classification/) 📑.
 
 ---
+
+## License
+
+This repository is licensed under the terms of the GNU Affero General Public
+License v3.0 ([GNU AGPLv3](https://choosealicense.com/licenses/agpl-3.0/)).
+
+## Citation
+
+If you use resources from this repository, please cite our paper:
+
+```
+Sittinger M, Uhler J, Pink M, Herz A (2024) Insect detect: An open-source DIY camera trap for automated insect monitoring. PLoS ONE 19(4): e0295474. https://doi.org/10.1371/journal.pone.0295474
+```
+
+---
+
+&nbsp;
 
 <div align="center">
   <p>
