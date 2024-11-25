@@ -148,17 +148,19 @@ def run(
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
-        dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
+        source_clean = source.rstrip("/").replace("/**", "")  # remove trailing slash and any "/**" pattern if present
+        source_crop = list(Path(source_clean).rglob("*crop*.jpg"))  # filter .jpg images with "crop" in filename
+        dataset = LoadImages(source_crop, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
     vid_path, vid_writer = [None] * bs, [None] * bs
 
-    # Create empty lists to save image filename and top1,top2,top3 class + probability
-    img_name_list = []
+    # Create empty lists to save top1,top2,top3 class + probability and image filename
     top1_list = []
     top2_list = []
     top3_list = []
     top1_prob_list = []
     top2_prob_list = []
     top3_prob_list = []
+    img_name_list = []
 
     # Set start time of inference
     start_inference = time.monotonic()
@@ -211,14 +213,14 @@ def run(
                 with open(f"{txt_path}.txt", "a") as f:
                     f.write(text + "\n")
 
-            # Write image filename and classification results to lists
-            img_name_list.append(f"{p.name}")
+            # Write classification results and image filename to lists
             top1_list.append(f"{names[top5i[0]]}")
             top2_list.append(f"{names[top5i[1]]}")
             top3_list.append(f"{names[top5i[2]]}")
             top1_prob_list.append(f"{prob[top5i[0]]:.2f}")
             top2_prob_list.append(f"{prob[top5i[1]]:.2f}")
             top3_prob_list.append(f"{prob[top5i[2]]:.2f}")
+            img_name_list.append(f"{p.name}")
 
             # Stream results
             im0 = annotator.result()
@@ -285,13 +287,13 @@ def run(
 
     # Write classification results to .csv
     df_results = pd.DataFrame(
-        {"img_name": img_name_list,
-         "top1": top1_list,
+        {"top1": top1_list,
          "top1_prob": top1_prob_list,
          "top2": top2_list,
          "top2_prob": top2_prob_list,
          "top3": top3_list,
-         "top3_prob": top3_prob_list
+         "top3_prob": top3_prob_list,
+         "img_name": img_name_list
         })
     df_results["top1_prob"] = pd.to_numeric(df_results["top1_prob"])
     df_results["top2_prob"] = pd.to_numeric(df_results["top2_prob"])
@@ -345,24 +347,25 @@ def run(
 
     if concat_csv:
         # Concatenate all metadata .csv files and add new columns with classification results
-        metadata_csv_files = list(Path(source).parent.glob("**/*metadata*.csv"))
-        if metadata_csv_files:
-            df_all = []
-            for csv in metadata_csv_files:
+        source_parent = Path(source).parent
+        metadata_csvs = list(source_parent.rglob("*metadata*.csv"))
+        if metadata_csvs:
+            metadata_dfs = []
+            for csv in metadata_csvs:
                 try:
-                    df_csv = pd.read_csv(csv)
-                    if not df_csv.empty:
-                        df_all.append(df_csv)
+                    metadata_df = pd.read_csv(csv)
+                    if not metadata_df.empty:
+                        metadata_dfs.append(metadata_df)
                 except pd.errors.EmptyDataError:
                     LOGGER.warning(f"Metadata .csv file with no content: {csv}\n")
-            if df_all:
-                df_concat = pd.concat(df_all, ignore_index=True)
-                df_concat = pd.concat([df_concat, df_results.drop(columns=["img_name"])], axis=1)
-                df_concat.to_csv(save_dir / "results" / f"{name}_metadata_classified.csv", index=False)
+            if metadata_dfs:
+                metadata_dfs_merged = pd.concat(metadata_dfs, axis=0, ignore_index=True)
+                metadata_classified = pd.concat([metadata_dfs_merged, df_results], axis=1)
+                metadata_classified.to_csv(save_dir / "results" / f"{name}_metadata_classified.csv", index=False)
             else:
-                LOGGER.warning(f"Could not find any metadata .csv files with content in {Path(source).parent.resolve()}\n")
+                LOGGER.warning(f"Could not find any metadata .csv files with content in {source_parent.resolve()}\n")
         else:
-            LOGGER.warning(f"Could not find any metadata .csv files in {Path(source).parent.resolve()}\n")
+            LOGGER.warning(f"Could not find any metadata .csv files in {source_parent.resolve()}\n")
 
     # Print script run time
     script_runtime = time.monotonic() - start_time
