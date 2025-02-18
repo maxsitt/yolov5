@@ -1,4 +1,5 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 # Automatically merges repository 'main' branch into all open PRs to keep them up-to-date
 # Action runs on updates to main branch so when one PR merges to main all others update
 
@@ -67,5 +68,5 @@ jobs:
                   print(f"❌ Could not process PR #{pr.number}: {e}")
 
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
