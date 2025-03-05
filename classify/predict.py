@@ -39,6 +39,7 @@ Modifications:
   '--sort-top1' sort images to folders with predicted top1 class as folder name
   '--sort-prob' sort images first by probability and then by top1 class (requires --sort-top1)
   '--concat-csv' concatenate metadata .csv files and append classification results
+  '--crops-only' only process images with 'crop' in filename
 - write only top1 class + prob on to image in top left corner (if not sort-top1)
 - save classification results to lists (image filename and top1, top2, top3 class + probability)
 - sort images to folders with predicted top1 class as folder name
