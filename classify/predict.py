@@ -117,7 +117,8 @@ def run(
     vid_stride=1,  # video frame-rate stride
     sort_top1=False, # sort images to folders with predicted top1 class as folder name
     sort_prob=False, # sort images first by probability and then by top1 class
-    concat_csv=False # concatenate metadata .csv files and append classification results
+    concat_csv=False, # concatenate metadata .csv files and append classification results
+    crops_only=False, # only process images with 'crop' in filename
 ):
     """Conducts YOLOv5 classification inference on diverse input sources and saves results."""
     source = str(source)
@@ -148,9 +149,12 @@ def run(
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
-        source_clean = source.rstrip("/").replace("/**", "")  # remove trailing slash and any "/**" pattern if present
-        source_crop = list(Path(source_clean).rglob("*crop*.jpg"))  # filter .jpg images with "crop" in filename
-        dataset = LoadImages(source_crop, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
+        if crops_only:
+            source_clean = source.rstrip("/").replace("/**", "")  # remove trailing slash and any "/**" pattern if present
+            source_crop = list(Path(source_clean).rglob("*crop*.jpg"))  # filter .jpg images with "crop" in filename
+            dataset = LoadImages(source_crop, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
+        else:
+            dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Create empty lists to save top1,top2,top3 class + probability and image filename
@@ -395,6 +399,7 @@ def parse_opt():
     parser.add_argument("--sort-top1", action="store_true", help="sort images to folders with predicted top1 class as folder name")
     parser.add_argument("--sort-prob", action="store_true", help="sort images first by probability and then by top1 class (requires --sort-top1)")
     parser.add_argument("--concat-csv", action="store_true", help="concatenate metadata .csv files and append classification results")
+    parser.add_argument("--crops-only", action="store_true", help="only process images with 'crop' in filename")
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
