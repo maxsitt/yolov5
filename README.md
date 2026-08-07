@@ -5,6 +5,11 @@
 [![DOI PLOS ONE](https://img.shields.io/badge/PLOS%20ONE-10.1371%2Fjournal.pone.0295474-BD3094)](https://doi.org/10.1371/journal.pone.0295474)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
 
+> [!WARNING]
+> Processing/classification of captured images and metadata processing is now handled
+> by the [`insect-detect-post`](https://github.com/maxsitt/insect-detect-post) software.
+> The approach described below is deprecated and will no longer be maintained.
+
 In this fork of the [YOLOv5](https://github.com/ultralytics/yolov5) repository, several
 of the original scripts were modified to customize classification model training,
 validation and prediction. The modifications are specifically adapted to data captured
